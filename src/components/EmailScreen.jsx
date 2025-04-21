@@ -1,16 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Form, Button } from 'react-bootstrap';
-import { Paperclip, TypeBold, TypeItalic, TypeUnderline, Link } from 'react-bootstrap-icons';
+import { Paperclip, TypeBold, TypeItalic, TypeUnderline } from 'react-bootstrap-icons';
 import { AiOutlineGif } from "react-icons/ai";
 import { CiLink } from "react-icons/ci";
 import { MdEmojiEmotions } from "react-icons/md";
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchemail ,saveDataToFirebase} from '../Store/EmailAuth';
+import { useNavigate } from 'react-router-dom';
 
 const EmailScreen = () => {
   const [data, setData] = useState({
-    email: 'test@gmail',
-    body: 'test mail',
-    textarea: 'this is a test mail',
+    email: '',
+    body: '',
+    textarea: '',
   });
+
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.email);
+
+  useEffect(() => {
+    dispatch(fetchemail());
+  }, [dispatch]);
 
   const handleForm = (e) => {
     const { name, value } = e.target;
@@ -20,13 +31,40 @@ const EmailScreen = () => {
     }));
   };
 
-  const handleSend = () => {
-    console.log('Sending email:', data);
-    alert('Email sent (mock functionality)');
+  const handleSend = async () => {
+    if (!data.email || !data.body) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    try {
+     
+   const result= await dispatch(saveDataToFirebase({
+        ...data,
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        read: false
+      })).unwrap();
+if(result){
+      setData({
+        email: '',
+        body: '',
+        textarea: '',
+      });
+
+      alert('Email sent successfully!');
+      navigate("/yahooemail");
+    }
+    } catch (err) {
+      console.error('Failed to send email:', err);
+     
+    }
   };
 
   return (
     <Container className="email-container">
+      {error && <div className="alert alert-danger">{error}</div>}
+      {loading && <div className="text-center">Sending email...</div>}
+
       <Row>
         <Col>
           <div className="email-header">
@@ -36,12 +74,13 @@ const EmailScreen = () => {
               </Form.Label>
               <Col sm="10" className="d-flex align-items-center">
                 <Form.Control
-                  type="text"
+                  type="email"
                   name='email'
-                  placeholder='test@gmail'
+                  placeholder='recipient@example.com'
                   value={data.email}
                   onChange={handleForm}
                   className="me-3"
+                  required
                 />
                 <div className="d-flex">
                   <p className="mb-0 me-2">Cc</p>
@@ -59,9 +98,10 @@ const EmailScreen = () => {
                 <Form.Control
                   type="text"
                   name='body'
-                  placeholder='test mail'
+                  placeholder='Email subject'
                   value={data.body}
                   onChange={handleForm}
+                  required
                 />
               </Col>
             </Form.Group>
@@ -71,17 +111,23 @@ const EmailScreen = () => {
             <Form.Control
               as="textarea"
               name='textarea'
-              placeholder="this is a test mail"
+              placeholder="Write your email here..."
               value={data.textarea}
               onChange={handleForm}
               style={{ height: '400px' }}
+              required
             />
           </div>
 
           <div className="email-footer mt-3 d-flex justify-content-between align-items-center">
             <div className="d-flex align-items-center">
-              <Button variant="primary" onClick={handleSend} className="me-2">
-                Send 
+              <Button
+                variant="primary"
+                onClick={handleSend}
+                className="me-2"
+               
+              >
+                {loading ? 'Sending...' : 'Send'}
               </Button>
               <AiOutlineGif size={24} className="me-2" />
               <CiLink size={24} className="me-2" />
@@ -91,10 +137,6 @@ const EmailScreen = () => {
               <Button variant="outline-secondary" size="sm" className="me-1">
                 <Paperclip />
               </Button>
-             
-             <Link to='/yahoomail'> <Button variant="outline-secondary" size="sm" className="me-1">
-                <Link />
-              </Button></Link>
               <Button variant="outline-secondary" size="sm" className="me-1">
                 <TypeBold style={{ fontWeight: 'bold' }} />
               </Button>
@@ -112,7 +154,17 @@ const EmailScreen = () => {
               </Button>
             </div>
             <div>
-              <Button variant="danger" size="sm">
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => {
+                  setData({
+                    email: '',
+                    body: '',
+                    textarea: '',
+                  });
+                }}
+              >
                 <span role="img" aria-label="delete">🗑️</span>
               </Button>
             </div>

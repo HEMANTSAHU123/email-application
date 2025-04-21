@@ -15,7 +15,7 @@ const App = () => {
     <Route path='/forgot/' element={<Forgotpassword/>}/>
     <Route path='/profile' element={<Profile/>}/>
     <Route path='/email' element={<EmailScreen/>}/>
-    <Route path='/yahoomail' element={<YahooMailClone/>}/>
+    <Route path='/yahooemail' element={<YahooMailClone/>}/>
   </Routes>
     </Router>
   )
